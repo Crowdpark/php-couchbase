@@ -1,213 +1,197 @@
 <?php
 /**
- * Define a Couchbase query.
- *
- * @package Couchbase
- * @license Apache 2.0
+ * Created by JetBrains PhpStorm.
+ * User: francis
+ * Date: 11/10/11
+ * Time: 12:49 PM
+ * To change this template use File | Settings | File Templates.
  */
-
-/*
-TODO: Add query options and different languages.
-*/
-
-class Couchbase_AllDocsView extends Couchbase_View
-{
+namespace Couchbase {
     /**
-     * Constructor, fake ddoc and view names
+     * Access Couchbase views.
+     *
+     * @package Couchbase
      */
-    function __construct()
+    class View
     {
-        parent::__construct("_builtin", "_all_docs");
-    }
+        /**
+         * Design Document id for the view.
+         *
+         * @todo redundant?
+         * @var string Design document id.
+         */
+        var $_id;
 
-    /**
-     * Return a Couchbase query result.
-     * 
-     * Overrides the parent's method to query `_all_docs` instead of a custom
-     * view.
-     *
-     * @param array $options Optional associative array of view options.
-     * @return Couchbase_ViewResult
-     */
-    function getResult($options = array())
-    {
-        return new Couchbase_ViewResult(
-            $this->db->couchdb->allDocs($options)
-        );
-    }
-}
+        /**
+         * Design Document revision for the view.
+         *
+         * @todo redundant?
+         * @var string Design document revision.
+         */
+        var $_rev;
 
-/**
- * Access Couchbase views.
- *
- * @package Couchbase
- */
-class Couchbase_View
-{
-    /**
-     * Design Document id for the view.
-     *
-     * @todo redundant?
-     * @var string Design document id.
-     */
-    var $_id;
+        /**
+         * Database object instance.
+         *
+         * @var Couchbase instance to access the server.
+         */
+        var $db;
 
-    /**
-     * Design Document revision for the view.
-     *
-     * @todo redundant?
-     * @var string Design document revision.
-     */
-    var $_rev;
+        /**
+         * Couchbase view definition object, designed to be turned into JSON.
+         *
+         * @var Couchbase_ViewDefinition that holds the JavaScript function code.
+         */
+        var $view_definition;
 
-    /**
-     * Database object instance.
-     *
-     * @var Couchbase instance to access the server.
-     */
-    var $db;
+        /**
+         * Design doc name sans "_design/" prefix.
+         *
+         * @var string
+         */
+        var $ddoc_name;
 
-    /**
-     * Couchbase view definition object, designed to be turned into JSON.
-     *
-     * @var Couchbase_ViewDefinition that holds the JavaScript function code.
-     */
-    var $view_definition;
+        /**
+         * View name
+         *
+         * @var string View name.
+         */
+        var $view_name;
 
-    /**
-     * Design doc name sans "_design/" prefix.
-     *
-     * @var string
-     */
-    var $ddoc_name;
-
-    /**
-     * View name
-     *
-     * @var string View name.
-     */
-    var $view_name;
-
-    /**
-     * Constructor, instantiates a new view with a design doc name and a view
-     * name.
-     *
-     * @param string $ddoc_name Design doc name.
-     * @param string $view_name View name.
-     */
-    function __construct($ddoc_name, $view_name)
-    {
-        $this->ddoc_name = $ddoc_name;
-        $this->name = $view_name;
-        $this->view_definition = new Couchbase_ViewDefinition;
-    }
-
-    /**
-     * Returns a Couchbase view result.
-     *
-     * @param array $options Optional associative array of view options.
-     * @return Couchbase_ViewResult
-     */
-    function getResult($options = array())
-    {
-        return new Couchbase_ViewResult(
-            $this->db->couchdb->view($this->ddoc_name, $this->name, $options)
-        );
-    }
-
-    /**
-     * Returns a Couchbase view result that matches a give key.
-     *
-     * @param string $key Return only rows that match this key.
-     * @param array $options Optional associative array of view options.
-     * @return Couchbase_ViewResult
-     */
-    function getResultByKey($key, $options = array())
-    {
-        return $this->getResult(array_merge($options, array("key" => $key)));
-    }
-
-    /**
-     * Returns a Couchbase view result specified by a key range.
-     *
-     * @param string $start First key to match in the range.
-     * @param string $end First key out of range.
-     * @param array $options Optional associative array of view options.
-     * @return Couchbase_ViewResult
-     */
-    function getResultByRange($start, $end = null, $options = array())
-    {
-        $key_options = $startkey_options = $endkey_options = array();
-
-        if(is_array($start)) {
-            // TODO: throw warning if either is empty
-            $startkey_options = array("startkey" => $start[0], "startkey_docid" => $start[1]);
-        } else {
-            $startkey_options = array("startkey" => $start);
+        /**
+         * Constructor, instantiates a new view with a design doc name and a view
+         * name.
+         *
+         * @param string $ddoc_name Design doc name.
+         * @param string $view_name View name.
+         */
+        function __construct($ddoc_name, $view_name)
+        {
+            $this->ddoc_name = $ddoc_name;
+            $this->name = $view_name;
+            $this->view_definition = new Couchbase_ViewDefinition;
         }
 
-        if(is_array($end)) {
-            // TODO: throw warning if either is empty
-            $endkey_options = array("endkey" => $end[0], "endkey_docid" => $end[1]);
-        } else {
-            $endkey_options = array("endkey" => $end);
+        /**
+         * Returns a Couchbase view result.
+         *
+         * @param array $options Optional associative array of view options.
+         *
+         * @return Couchbase_ViewResult
+         */
+        function getResult($options = array())
+        {
+            return new Couchbase_ViewResult(
+                $this->db->couchdb->view($this->ddoc_name, $this->name, $options)
+            );
         }
 
-        $key_options = array_merge($startkey_options, $endkey_options);
-        return $this->getResult(array_merge($options, $key_options));
-    }
+        /**
+         * Returns a Couchbase view result that matches a give key.
+         *
+         * @param string $key     Return only rows that match this key.
+         * @param array  $options Optional associative array of view options.
+         *
+         * @return Couchbase_ViewResult
+         */
+        function getResultByKey($key, $options = array())
+        {
+            return $this->getResult(array_merge($options, array("key" => $key)));
+        }
 
-    /**
-     * Retrieve values from cache in view result order.
-     *
-     * @param array $options Optional associative array of view options.
-     * @return void
-     */
-    function getValues($options = array())
-    {
-        $result = $this->getResult($options);
+        /**
+         * Returns a Couchbase view result specified by a key range.
+         *
+         * @param string $start   First key to match in the range.
+         * @param string $end     First key out of range.
+         * @param array  $options Optional associative array of view options.
+         *
+         * @return Couchbase_ViewResult
+         */
+        function getResultByRange($start, $end = null, $options = array())
+        {
+            $key_options = $startkey_options = $endkey_options = array();
 
-        // TODO: make this a anonymous function when 5.3 is our minimum version
-        function extract_id($row) { return $row->id; }
-        $ids = array_map("extract_id", $result->rows);
+            if (is_array($start)) {
+                // TODO: throw warning if either is empty
+                $startkey_options = array("startkey" => $start[0], "startkey_docid" => $start[1]);
+            } else {
+                $startkey_options = array("startkey" => $start);
+            }
 
-        $multi_result = $this->db->getMulti($ids);
-        // TODO: make this a anonymous function when 5.3 is our minimum version
-        function jsonize($s) { return json_decode($s); }
-        $jsoned_result = array_map("jsonize", $multi_result);
-        return($jsoned_result);
-    }
+            if (is_array($end)) {
+                // TODO: throw warning if either is empty
+                $endkey_options = array("endkey" => $end[0], "endkey_docid" => $end[1]);
+            } else {
+                $endkey_options = array("endkey" => $end);
+            }
 
-    /**
-     * Returns a result paginator for results of this view.
-     *
-     * @return Couchbase_ViewResultPaginator
-     */
-    function getResultPaginator()
-    {
-        return new Couchbase_ViewResultPaginator($this);
-    }
+            $key_options = array_merge($startkey_options, $endkey_options);
+            return $this->getResult(array_merge($options, $key_options));
+        }
 
-    /**
-     * Set a map function for this view.
-     *
-     * @param string $code Map function code. Must currently be JavaSCript.
-     * @return void
-     */
-    function setMapFunction($code)
-    {
-        $this->view_definition->setMapFunction($code);
-    }
+        /**
+         * Retrieve values from cache in view result order.
+         *
+         * @param array $options Optional associative array of view options.
+         *
+         * @return void
+         */
+        function getValues($options = array())
+        {
+            $result = $this->getResult($options);
 
-    /**
-     * Set a reduce function for this view.
-     *
-     * @param string $code Reduce function code. Must currently be JavaSCript.
-     * @return void
-     */
-    function setReduceFunction($code)
-    {
-        $this->view_definition->setReduceFunction($code);
+            // TODO: make this a anonymous function when 5.3 is our minimum version
+            function extract_id($row)
+            {
+                return $row->id;
+            }
+
+            $ids = array_map("extract_id", $result->rows);
+
+            $multi_result = $this->db->getMulti($ids);
+            // TODO: make this a anonymous function when 5.3 is our minimum version
+            function jsonize($s)
+            {
+                return json_decode($s);
+            }
+
+            $jsoned_result = array_map("jsonize", $multi_result);
+            return ($jsoned_result);
+        }
+
+        /**
+         * Returns a result paginator for results of this view.
+         *
+         * @return Couchbase_ViewResultPaginator
+         */
+        function getResultPaginator()
+        {
+            return new Couchbase_ViewResultPaginator($this);
+        }
+
+        /**
+         * Set a map function for this view.
+         *
+         * @param string $code Map function code. Must currently be JavaSCript.
+         *
+         * @return void
+         */
+        function setMapFunction($code)
+        {
+            $this->view_definition->setMapFunction($code);
+        }
+
+        /**
+         * Set a reduce function for this view.
+         *
+         * @param string $code Reduce function code. Must currently be JavaSCript.
+         *
+         * @return void
+         */
+        function setReduceFunction($code)
+        {
+            $this->view_definition->setReduceFunction($code);
+        }
     }
 }
-
